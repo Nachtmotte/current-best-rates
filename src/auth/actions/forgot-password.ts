@@ -1,12 +1,12 @@
 "use server";
 
 import { getUserByEmail } from "@/data/user";
-import { createPasswordResetToken } from "@/data/password-reset-token";
-import { sendPasswordResetEmail } from "@/auth/mail";
+// import { createPasswordResetToken } from "@/data/password-reset-token";
+// import { sendPasswordResetEmail } from "@/auth/mail";
 
 export default async function forgotPassword(
   prevState: any,
-  formData: FormData,
+  formData: FormData
 ) {
   const { email } = Object.fromEntries(formData) as {
     email?: string | null;
@@ -25,12 +25,12 @@ export default async function forgotPassword(
     return { status: "success", message: "Reset email sent" };
   }
 
-  const passwordResetToken = await createPasswordResetToken(email);
+  // const passwordResetToken = await createPasswordResetToken(email);
 
-  await sendPasswordResetEmail(
-    passwordResetToken.email,
-    passwordResetToken.token,
-  );
+  // await sendPasswordResetEmail(
+  //   passwordResetToken.email,
+  //   passwordResetToken.token,
+  // );
 
   return { status: "success", message: "Reset email sent" };
 }
