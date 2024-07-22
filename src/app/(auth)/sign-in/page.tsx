@@ -1,11 +1,16 @@
-import { SignInForm } from "../_components";
+import { AUTH_REGISTER_PATH } from "@/routes";
 
-export default function SignInPage() {
+import { CardWrapper } from "@/components";
+import { LoginForm } from "@/app/(auth)/_components";
+
+export default function LoginPage() {
   return (
-    <div>
-      <h1>Sign In</h1>
-
-      <SignInForm />
-    </div>
+    <CardWrapper
+      headerLabel="Sign In"
+      backButtonLabel="Don't have an account?"
+      backButtonHref={AUTH_REGISTER_PATH}
+    >
+      <LoginForm />
+    </CardWrapper>
   );
 }

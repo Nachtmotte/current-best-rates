@@ -1,6 +1,6 @@
-import { type NextRequest, NextFetchEvent } from "next/server";
-
 import { authMiddleware } from "@/auth";
+
+import { type NextRequest, NextFetchEvent } from "next/server";
 
 export default function middleware(
   request: NextRequest,
@@ -10,5 +10,5 @@ export default function middleware(
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
 };

@@ -1,0 +1,18 @@
+import { z } from "zod";
+
+const RegisterSchema = z
+    .object({
+        name: z.string().min(4, { message: "Minimum 4 characters required" }),
+        email: z
+            .string()
+            .min(1, { message: "Email is required" })
+            .email({ message: "Email is invalid" }),
+        password: z.string().min(6, { message: "Minimum 6 characters required" }),
+        confirmPassword: z.string(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Passwords don't match",
+        path: ["confirmPassword"],
+    });
+
+export default RegisterSchema;

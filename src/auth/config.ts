@@ -1,61 +1,33 @@
-// eslint-disable-next-line no-unused-vars
-import { JWT } from "next-auth/jwt";
-import { type DefaultSession } from "next-auth";
-import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
+import Credentials from "next-auth/providers/credentials";
+
+import db from "@/lib/db";
+import { LoginSchema } from "@/schemas/auth";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { getUserByEmail, getUserById } from "@/data/user";
+
+import { AUTH_ERROR_PATH, AUTH_LOGIN_PATH } from "@/routes";
+
 import type { NextAuthConfig } from "next-auth";
 import type { Provider } from "next-auth/providers";
 
-import db from "@/lib/db";
-import { getUserByEmail, getUserById } from "@/data/user";
-import { AUTH_SIGN_IN_PATH } from "@/auth/constants";
-
-type USER_ROLE = "ADMIN" | "USER";
-
-declare module "next-auth" {
-  // eslint-disable-next-line no-unused-vars
-  interface Session {
-    user: {
-      role: USER_ROLE;
-    } & DefaultSession["user"];
-  }
-}
-
-declare module "next-auth/jwt" {
-  // eslint-disable-next-line no-unused-vars
-  interface JWT {
-    role?: USER_ROLE;
-  }
-}
-
 const providers = [
   Credentials({
-    authorize: async (credentials) => {
-      const { email, password } = credentials;
+    authorize: async function (credentials) {
+      const validateFields = LoginSchema.safeParse(credentials);
 
-      if (
-        !email ||
-        !password ||
-        typeof email !== "string" ||
-        typeof password !== "string"
-      ) {
-        return null;
+      if (validateFields.success) {
+        const { email, password } = validateFields.data;
+
+        const user = await getUserByEmail(email);
+        if (!user || !user.password) return null;
+
+        const passwordsMatch = await bcrypt.compare(password, user.password);
+
+        if (passwordsMatch) return user;
       }
 
-      const user = await getUserByEmail(email as string);
-
-      if (!user || !user.password) {
-        return null;
-      }
-
-      const passwordsMatch = await bcrypt.compare(password, user.password);
-
-      if (!passwordsMatch) {
-        return null;
-      }
-
-      return user;
+      return null;
     },
   }),
 ].filter(Boolean) as Provider[];
@@ -64,16 +36,14 @@ const authConfig = {
   providers,
   callbacks: {
     async jwt({ token }) {
-      if (!token.sub) {
-        return token;
-      }
+      if (!token.sub) return token;
 
-      const existingUser = await getUserById(token.sub as string);
+      const existingUser = await getUserById(token.sub);
 
-      if (!existingUser) {
-        return token;
-      }
+      if (!existingUser) return token;
 
+      token.name = existingUser.name;
+      token.email = existingUser.email;
       token.role = existingUser.role;
 
       return token;
@@ -88,17 +58,27 @@ const authConfig = {
         session.user.role = token.role;
       }
 
+      if (token.name && session.user) {
+        session.user.name = token.name;
+      }
+
+      if (token.email && session.user) {
+        session.user.email = token.email;
+      }
+
       return session;
     },
   },
   pages: {
-    signIn: AUTH_SIGN_IN_PATH,
+    signIn: AUTH_LOGIN_PATH,
+    error: AUTH_ERROR_PATH,
   },
 } satisfies NextAuthConfig;
 
 export const authConfigWithSessionStrategy = {
   adapter: PrismaAdapter(db),
   session: { strategy: "jwt" },
+  jwt: { maxAge: 3600 /*1hr*/ },
   ...authConfig,
 } satisfies NextAuthConfig;
 

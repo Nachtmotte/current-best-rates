@@ -1,16 +1,18 @@
 import NextAuth from "next-auth";
-import { type NextRequest, NextFetchEvent } from "next/server";
 
 import { authConfigWithSessionStrategy } from "./config";
+
+import { type NextRequest, NextFetchEvent } from "next/server";
+
 const { auth } = NextAuth(authConfigWithSessionStrategy);
 
 import {
   AUTH_ROUTES,
   AUTH_PUBLIC_ROUTES,
-  AUTH_SIGN_IN_PATH,
+  AUTH_LOGIN_PATH,
   DEFAULT_SIGN_IN_REDIRECT,
   AUTH_API_PREFIX,
-} from "./constants";
+} from "@/routes";
 
 export default function authMiddleware(
   request: NextRequest,
@@ -30,13 +32,11 @@ export default function authMiddleware(
     }
 
     if (isAuthenticated && isAuthRoute) {
-      return Response.redirect(
-        new URL(DEFAULT_SIGN_IN_REDIRECT, req.nextUrl.origin)
-      );
+      return Response.redirect(new URL(DEFAULT_SIGN_IN_REDIRECT, nextUrl));
     }
 
     if (!isAuthenticated && !isPublicRoute && !isAuthRoute) {
-      return Response.redirect(new URL(AUTH_SIGN_IN_PATH, req.nextUrl.origin));
+      return Response.redirect(new URL(AUTH_LOGIN_PATH, nextUrl));
     }
 
     return;
